@@ -5,13 +5,13 @@ function App() {
   const [result, setResult] = useState(null);
 
   const checkNews = async () => {
-    const res = await fetch("http://localhost:8080/detect", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ text })
-    });
+    const res = await fetch("https://fake-news-identifier-r6s9.onrender.com/predict", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ text })
+});
 
     const data = await res.json();
     setResult(data);
