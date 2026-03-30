@@ -1,21 +1,44 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pickle
-from flask import Flask,request,jsonify
+import os
 
-model=pickle.load(open("model.pkl","rb"))
-vec=pickle.load(open("vectorizer.pkl","rb"))
+# Initialize app
+app = Flask(__name__)
+CORS(app)
 
-app=Flask(__name__)
+# Load model and vectorizer
+model = pickle.load(open("model.pkl", "rb"))
+vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-@app.route("/predict",methods=["POST"])
-def predict():
- text=request.json["text"]
- v=vec.transform([text])
- pred=model.predict(v)[0]
- prob=model.predict_proba(v)[0].max()
+# Home route (important for Render testing)
+@app.route("/")
+def home():
+    return "Fake News Detection API is running 🚀"
 
- return jsonify({
-  "prediction":"FAKE NEWS" if pred==0 else "REAL NEWS",
-  "confidence":round(prob*100,2)
- })
+# Prediction route
+@app.route("/detect", methods=["POST"])
+def detect():
+    data = request.get_json()
 
-app.run(port=5000)
+    if not data or "text" not in data:
+        return jsonify({"error": "No text provided"}), 400
+
+    text = data["text"]
+
+    # Transform input
+    transformed = vectorizer.transform([text])
+
+    # Predict
+    prediction = model.predict(transformed)[0]
+
+    result = "Fake News ❌" if prediction == 0 else "Real News ✅"
+
+    return jsonify({
+        "prediction": result
+    })
+
+# IMPORTANT: Render-compatible run
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

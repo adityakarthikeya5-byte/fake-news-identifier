@@ -14,9 +14,7 @@ function App() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        "https://fake-news-identifier-r6s9.onrender.com/predict",
-        {
+      const res = await fetch("https://fake-news-identifier-r6s9.onrender.com/detect", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
