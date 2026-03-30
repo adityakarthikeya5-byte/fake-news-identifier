@@ -3,99 +3,137 @@ import React, { useState } from "react";
 function App() {
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const checkNews = async () => {
-    const res = await fetch("https://fake-news-identifier-r6s9.onrender.com/predict", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ text })
-});
+  const analyze = async () => {
+    if (!text) {
+      alert("Please enter some text");
+      return;
+    }
 
-    const data = await res.json();
-    setResult(data);
+    setLoading(true);
+
+    try {
+      const res = await fetch(
+        "https://fake-news-identifier-r6s9.onrender.com/predict",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      const data = await res.json();
+      setResult(data);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Backend not connected (wait 30s and try again)");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div style={{
-      fontFamily: "Arial",
-      background: "#0f172a",
-      minHeight: "100vh",
-      color: "white",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center"
-    }}>
-
-      <div style={{
-        background: "#1e293b",
-        padding: "30px",
-        borderRadius: "15px",
-        width: "600px",
-        boxShadow: "0 0 20px rgba(0,0,0,0.5)"
-      }}>
-
-        <h1 style={{ textAlign: "center" }}>
-          🧠 AI-Based Fake News Identifier 
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>
+          🤖 AI-Based Fake News Identifier
         </h1>
 
         <textarea
-          rows="6"
-          placeholder="Paste news article here..."
+          placeholder="Enter or paste news here..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            borderRadius: "10px",
-            border: "none",
-            marginTop: "15px"
-          }}
+          style={styles.textarea}
         />
 
-        <button
-          onClick={checkNews}
-          style={{
-            width: "100%",
-            padding: "12px",
-            marginTop: "15px",
-            background: "#3b82f6",
-            border: "none",
-            borderRadius: "10px",
-            color: "white",
-            fontSize: "16px",
-            cursor: "pointer"
-          }}
-        >
-          Analyze News
+        <button onClick={analyze} style={styles.button}>
+          {loading ? "Analyzing..." : "Analyze"}
         </button>
 
         {result && (
-          <div style={{
-            marginTop: "20px",
-            padding: "15px",
-            borderRadius: "10px",
-            background:
-              result.prediction === "FAKE NEWS"
-                ? "#7f1d1d"
-                : "#14532d"
-          }}>
-
-            <h2>
+          <div style={styles.result}>
+            <h2
+              style={{
+                color:
+                  result.prediction === "REAL"
+                    ? "#4CAF50"
+                    : "#FF4C4C",
+              }}
+            >
               {result.prediction}
             </h2>
 
-            <p>
+            <p style={styles.confidence}>
               Confidence: {result.confidence}%
             </p>
-
           </div>
         )}
-
       </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    height: "100vh",
+    background: "linear-gradient(135deg, #0f172a, #1e293b)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontFamily: "Segoe UI, sans-serif",
+  },
+
+  card: {
+    background: "#111827",
+    padding: "40px",
+    borderRadius: "20px",
+    width: "500px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+    textAlign: "center",
+  },
+
+  title: {
+    color: "white",
+    marginBottom: "20px",
+  },
+
+  textarea: {
+    width: "100%",
+    height: "120px",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "none",
+    outline: "none",
+    fontSize: "14px",
+    marginBottom: "20px",
+    background: "#1f2937",
+    color: "white",
+  },
+
+  button: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#3b82f6",
+    color: "white",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+
+  result: {
+    marginTop: "20px",
+    background: "#1f2937",
+    padding: "15px",
+    borderRadius: "10px",
+  },
+
+  confidence: {
+    color: "#cbd5e1",
+  },
+};
 
 export default App;
