@@ -1,136 +1,144 @@
-import React, { useState } from "react";
+// frontend/src/App.js
+import { useState, useEffect } from "react";
+
+const BACKEND_URL = "https://fake-news-identifier-r6s9.onrender.com"; // ← your Render URL
 
 function App() {
-  const [text, setText] = useState("");
+  const [inputText, setInputText] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [backendReady, setBackendReady] = useState(false);
+  const [error, setError] = useState(null);
 
-  const analyze = async () => {
-    if (!text) {
-      alert("Please enter some text");
-      return;
-    }
+  // Wake up backend on page load (handles Render cold start)
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/`)
+      .then((res) => res.json())
+      .then(() => setBackendReady(true))
+      .catch(() => setBackendReady(false));
+  }, []);
+
+  const analyzeText = async () => {
+    if (!inputText.trim()) return;
 
     setLoading(true);
+    setResult(null);
+    setError(null);
 
     try {
-      const res = await fetch("https://fake-news-identifier-r6s9.onrender.com/detect", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text }),
-        }
-      );
+      const response = await fetch(`${BACKEND_URL}/detect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: inputText }),
+      });
 
-      const data = await res.json();
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+      const data = await response.json();
       setResult(data);
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Backend not connected (wait 30s and try again)");
+    } catch (err) {
+      setError("Backend not reachable. It may be waking up — wait 30 seconds and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>
-          🤖 AI-Based Fake News Identifier
-        </h1>
+    <div style={styles.container}>
+      <h1 style={styles.title}>🤖 AI-Based Fake News Identifier</h1>
 
-        <textarea
-          placeholder="Enter or paste news here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          style={styles.textarea}
-        />
+      {/* Backend status indicator */}
+      <p style={{ color: backendReady ? "lightgreen" : "orange", marginBottom: "10px" }}>
+        {backendReady ? "✅ Backend connected" : "⏳ Backend warming up..."}
+      </p>
 
-        <button onClick={analyze} style={styles.button}>
-          {loading ? "Analyzing..." : "Analyze"}
-        </button>
+      <textarea
+        style={styles.textarea}
+        placeholder="Paste a news headline or article here..."
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        rows={5}
+      />
 
-        {result && (
-          <div style={styles.result}>
-            <h2
-              style={{
-                color:
-                  result.prediction === "REAL"
-                    ? "#4CAF50"
-                    : "#FF4C4C",
-              }}
-            >
-              {result.prediction}
-            </h2>
+      <button
+        style={styles.button}
+        onClick={analyzeText}
+        disabled={loading || !inputText.trim()}
+      >
+        {loading ? "Analyzing..." : "Analyze"}
+      </button>
 
-            <p style={styles.confidence}>
-              Confidence: {result.confidence}%
-            </p>
-          </div>
-        )}
-      </div>
+      {/* Error message */}
+      {error && <p style={styles.error}>{error}</p>}
+
+      {/* Result */}
+      {result && (
+        <div style={{
+          ...styles.result,
+          borderColor: result.prediction === "Fake News" ? "#ff4d4d" : "#4dff88"
+        }}>
+          <h2 style={{ color: result.prediction === "Fake News" ? "#ff4d4d" : "#4dff88" }}>
+            {result.prediction}
+          </h2>
+          <p>Confidence: {result.confidence}%</p>
+        </div>
+      )}
     </div>
   );
 }
 
 const styles = {
-  page: {
-    height: "100vh",
-    background: "linear-gradient(135deg, #0f172a, #1e293b)",
+  container: {
+    minHeight: "100vh",
+    backgroundColor: "#0d1b2a",
     display: "flex",
-    justifyContent: "center",
+    flexDirection: "column",
     alignItems: "center",
-    fontFamily: "Segoe UI, sans-serif",
+    justifyContent: "center",
+    padding: "40px 20px",
+    fontFamily: "Arial, sans-serif",
+    color: "white",
   },
-
-  card: {
-    background: "#111827",
-    padding: "40px",
-    borderRadius: "20px",
-    width: "500px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+  title: {
+    fontSize: "2rem",
+    marginBottom: "20px",
     textAlign: "center",
   },
-
-  title: {
-    color: "white",
-    marginBottom: "20px",
-  },
-
   textarea: {
     width: "100%",
-    height: "120px",
-    padding: "12px",
-    borderRadius: "10px",
-    border: "none",
-    outline: "none",
-    fontSize: "14px",
-    marginBottom: "20px",
-    background: "#1f2937",
-    color: "white",
-  },
-
-  button: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "10px",
-    border: "none",
-    background: "#3b82f6",
-    color: "white",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-
-  result: {
-    marginTop: "20px",
-    background: "#1f2937",
+    maxWidth: "600px",
     padding: "15px",
-    borderRadius: "10px",
+    borderRadius: "8px",
+    border: "1px solid #444",
+    backgroundColor: "#1a2a3a",
+    color: "white",
+    fontSize: "1rem",
+    resize: "vertical",
   },
-
-  confidence: {
-    color: "#cbd5e1",
+  button: {
+    marginTop: "15px",
+    padding: "12px 40px",
+    backgroundColor: "#4a90e2",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    width: "100%",
+    maxWidth: "600px",
+  },
+  result: {
+    marginTop: "25px",
+    padding: "20px 40px",
+    borderRadius: "10px",
+    border: "2px solid",
+    textAlign: "center",
+  },
+  error: {
+    color: "orange",
+    marginTop: "15px",
+    maxWidth: "600px",
+    textAlign: "center",
   },
 };
 
