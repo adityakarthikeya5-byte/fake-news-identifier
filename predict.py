@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
+import os
 
 app = Flask(__name__)
 
-# ✅ THIS LINE FIXES YOUR ISSUE
+# ✅ Enable CORS
 CORS(app)
 
 # Load model and vectorizer
@@ -31,9 +32,7 @@ def detect():
         "prediction": "Real News" if prediction == 1 else "Fake News"
     })
 
-# ✅ IMPORTANT FOR RENDER
-import os
-
+# ✅ CRITICAL FIX FOR RENDER
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
