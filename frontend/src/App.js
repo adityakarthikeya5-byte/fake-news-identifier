@@ -1,7 +1,7 @@
 // frontend/src/App.js
 import { useState, useEffect } from "react";
 
-const BACKEND_URL = "https://fake-news-identifier-r6s9.onrender.com"; // ← your Render URL
+const BACKEND_URL = "https://fake-news-identifier-3dhe.onrender.com"; // ← your Render URL
 
 function App() {
   const [inputText, setInputText] = useState("");
