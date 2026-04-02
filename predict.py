@@ -1,45 +1,39 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
-import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend (Vercel)
+
+# ✅ THIS LINE FIXES YOUR ISSUE
+CORS(app)
 
 # Load model and vectorizer
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-# Home route (to check backend is running)
 @app.route("/")
 def home():
     return "Backend is running!"
 
-# Prediction route
 @app.route("/detect", methods=["POST"])
 def detect():
-    try:
-        data = request.get_json()
-        text = data["text"]
+    data = request.get_json()
 
-        # Transform input
-        transformed = vectorizer.transform([text])
+    if not data or "text" not in data:
+        return jsonify({"error": "No text provided"}), 400
 
-        # Predict
-        prediction = model.predict(transformed)[0]
+    text = data["text"]
 
-        result = "Fake News" if prediction == 1 else "Real News"
+    vector = vectorizer.transform([text])
+    prediction = model.predict(vector)[0]
 
-        return jsonify({
-            "prediction": result
-        })
+    return jsonify({
+        "prediction": "Real News" if prediction == 1 else "Fake News"
+    })
 
-    except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+# ✅ IMPORTANT FOR RENDER
+import os
 
-# Run app (IMPORTANT FOR RENDER)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
